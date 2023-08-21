@@ -1,0 +1,20 @@
+- name: Stop services
+  hosts: webservers
+  become: yes
+  tasks:
+    - name: Stop Nagios
+      command: systemctl stop nagios.service
+    - name: Stop HTTPD
+      command: systemctl stop httpd.service
+
+
+- name: Start services
+  hosts: webservers
+  become: yes
+  tasks:
+    - name: Start HTTPD
+      command: systemctl start httpd.service
+    - name: Start Nagios
+      command: systemctl start nagios.service
+
+

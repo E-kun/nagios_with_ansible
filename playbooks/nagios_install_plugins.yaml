@@ -1,0 +1,44 @@
+- name: Install dependencies
+  hosts: webservers
+  become: yes
+  tasks:
+    - name: Install packages
+      command: yum install -y gcc glibc glibc-common make gettext automake autoconf wget openssl-devel net-snmp net-snmp-utils epel-release
+    - name: Install Perl
+      command: yum --enablerepo=powertools,epel install perl-Net-SNMP
+
+- name: Download plugins
+  hosts: webservers
+  tasks:
+    - name: Download files
+      command:
+        chdir: /tmp 
+        cmd: wget --no-check-certificate -O nagios-plugins.tar.gz https://github.com/nagios-plugins/nagios-plugins/archive/release-2.4.6.tar.gz
+    - name: Unzip files
+      command:
+        chdir: /tmp 
+        cmd: tar zxf /tmp/nagios-plugins.tar.gz
+
+- name: Compile and install packages
+  hosts: webservers
+  become: yes
+  tasks:
+    - name: Run setup
+      command:
+        chdir: /tmp/nagios-plugins-release-2.4.6/
+        cmd: ./tools/setup
+    - name: Run configure
+      command:
+        chdir: /tmp/nagios-plugins-release-2.4.6/
+        cmd: ./configure
+    - name: Compile files
+      command:
+        chdir: /tmp/nagios-plugins-release-2.4.6/
+        cmd: make
+    - name: Compile install files
+      command:
+        chdir: /tmp/nagios-plugins-release-2.4.6/
+        cmd: make install
+
+
+

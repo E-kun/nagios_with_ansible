@@ -1,0 +1,16 @@
+virtualmachines:
+  hosts:
+    secondary:
+      ansible_host: 192.168.1.15
+      http_port: 80
+  vars:
+    ansible_user: ansible_controller
+
+webservers:
+  hosts:
+    secondary:
+      ansible_host: 192.168.1.15
+      http_port: 80
+  vars:
+    ansible_user: ansible_controller
+

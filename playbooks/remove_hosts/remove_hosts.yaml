@@ -1,0 +1,23 @@
+---
+- hosts: all
+  gather_facts: no
+  become: yes
+  become_user: nagios
+  vars_files: 
+    - hosts_to_remove.cfg
+
+
+  tasks:
+    - name: Remove file (delete file)
+      ansible.builtin.file:
+        path: /usr/local/nagios/etc/objects/{{ item }}.cfg
+        state: absent
+      loop: "{{ hosts_list }}"
+
+    - name: Run check
+      command: /usr/local/nagios/bin/nagios -v /usr/local/nagios/etc/nagios.cfg
+      register: output
+
+    - debug:
+        var: output.stdout_lines
+

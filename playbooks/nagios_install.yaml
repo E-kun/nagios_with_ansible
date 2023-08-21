@@ -1,0 +1,133 @@
+- name: Disable SELinux
+  hosts: webservers
+  become: yes
+  tasks:
+    - name: Disable SELinux on file
+      command: sed -i 's/SELINUX=.*/SELINUX=disabled/g' /etc/selinux/config
+    - name: Run setenforce command
+      command: setenforce 0
+
+- name: Install packages
+  hosts: webservers
+  become: yes
+  tasks:
+    - name: Install dependency packages
+      command: yum -y install -y gcc glibc glibc-common wget unzip httpd php gd gd-devel perl postfix
+    - name: Install OpenSSL
+      command: yum -y install openssl-devel
+
+- name: Download Nagios Core Source Files
+  hosts: webservers
+  tasks:
+    - name: Download Nagios Core tar file
+      command: 
+        chdir: /tmp
+        cmd: wget -O nagioscore.tar.gz https://github.com/NagiosEnterprises/nagioscore/archive/nagios-4.4.14.tar.gz
+    - name: Unzip tar file
+      command:
+        chdir: /tmp 
+        cmd: tar xzf /tmp/nagioscore.tar.gz
+
+- name: Compile Nagios Core Source Files
+  hosts: webservers
+  tasks:
+    - name: Configure files
+      command: 
+        chdir: /tmp/nagioscore-nagios-4.4.14/
+        cmd: ./configure
+    - name: Make files
+      command:
+        chdir: /tmp/nagioscore-nagios-4.4.14/
+        cmd: make all
+
+- name: Create Nagios Users and Groups
+  hosts: webservers
+  become: yes
+  tasks:
+    - name: Compile install-groups-users files
+      command: 
+        chdir: /tmp/nagioscore-nagios-4.4.14/
+        cmd: make install-groups-users
+    - name: Create nagios and apache users
+      command:
+        chdir: /tmp/nagioscore-nagios-4.4.14/
+        cmd: usermod -a -G nagios apache
+
+- name: Compile and Install Binaries
+  hosts: webservers
+  become: yes
+  tasks:
+    - name: Compile files
+      command: 
+        chdir: /tmp/nagioscore-nagios-4.4.14/
+        cmd: make install
+
+- name: Install Service/Daemon
+  hosts: webservers
+  become: yes
+  tasks:
+    - name: Compile files
+      command:
+        chdir: /tmp/nagioscore-nagios-4.4.14/
+        cmd: make install-daemoninit
+    - name: Restart HTTPD
+      command: systemctl enable httpd.service
+
+- name: Install Command Mode
+  hosts: webservers
+  become: yes
+  tasks:
+    - name: Compile files
+      command:
+        chdir: /tmp/nagioscore-nagios-4.4.14/ 
+        cmd: make install-commandmode
+
+- name: Install Config Files
+  hosts: webservers
+  become: yes
+  tasks:
+    - name: Compile files
+      command:
+        chdir: /tmp/nagioscore-nagios-4.4.14/ 
+        cmd: make install-config
+
+- name: Install Apache Config Files
+  hosts: webservers
+  become: yes
+  tasks:
+    - name: Compile files
+      command: 
+        chdir: /tmp/nagioscore-nagios-4.4.14/
+        cmd: make install-webconf
+
+- name: Configure Firewall
+  hosts: webservers
+  become: yes
+  tasks:
+    - name: Allow inbound traffic
+      command: firewall-cmd --zone=public --add-port=80/tcp
+    - name: Set as permanent
+      command: firewall-cmd --zone=public --add-port=80/tcp --permanent
+
+- name: Setup nagiosadmin User Account
+  hosts: webservers
+  become: yes
+  tasks:
+    - name: Create htpasswd user
+      command: htpasswd -c -b /usr/local/nagios/etc/htpasswd.users nagiosadmin WNSaQkFFXa
+
+- name: Start Apache
+  hosts: webservers
+  become: yes
+  tasks:
+    - name: Start web server
+      command: systemctl start httpd.service
+
+- name: Start Nagios Service
+  hosts: webservers
+  become: yes
+  tasks:
+    - name: Start Nagios
+      command: systemctl start nagios.service
+
+

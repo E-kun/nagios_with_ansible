@@ -1,0 +1,27 @@
+---
+- hosts: all
+  gather_facts: no
+  become: yes
+  become_user: nagios
+  vars_files: 
+    - hosts_new.cfg
+
+
+  tasks:
+    - name: Add hosts
+      template:
+        src: ./templates/nagios_server.cfg.j2
+        dest: /usr/local/nagios/etc/objects/{{ item.key }}.cfg
+        group: nagios
+        mode: 0664
+      #ansible.builtin.debug:
+      #msg: "{{ item.key }} {{ item.value.host_name }} {{ item.value.host_alias }} {{ item.value.ip_address }}"
+      loop: "{{ hosts_list | dict2items }}"
+
+    - name: Run check
+      command: /usr/local/nagios/bin/nagios -v /usr/local/nagios/etc/nagios.cfg
+      register: output
+
+    - debug:
+        var: output.stdout_lines
+
